@@ -1,0 +1,53 @@
+# Define stages
+stages:
+  - build
+  - unittest
+  - pytest
+  - deploy
+# Build stage
+build:
+  stage: build
+  image: python:3.9-slim
+  script:
+    - pip install -r requirements.txt
+  artifacts:
+    paths:
+      - .pip_cache/
+    expire_in: 1 day
+
+# Unittest stage
+unittest:
+  stage: unittest
+  image: python:3.9-slim
+  dependencies:
+    - build
+  script:
+    - pip install -r requirements.txt
+    - python -m unittest discover -s tests/unittest
+
+# Pytest stage
+pytest:
+  stage: pytest
+  image: python:3.9-slim
+  dependencies:
+    - build
+  script:
+    - pip install -r requirements.txt
+    - pytest tests/pytest 
+
+# Deploy stage
+deploy:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_REGISTRY_PAT" | docker login -u "$CI_REGISTRY_USERNAME" --password-stdin "$CI_REGISTRY"
+
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker push $CI_REGISTRY_IMAGE
+variables:
+  CI_REGISTRY_PAT: glpat-KzM4kWWZvzjdbGbLPmb6
+  CI_REGISTRY_USERNAME: SundeepKumar_thi
+  PYTHONPATH: "/builds/thi-wi/sweng/
